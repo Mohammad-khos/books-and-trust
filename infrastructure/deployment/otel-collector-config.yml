@@ -1,0 +1,30 @@
+receivers:
+  fluentforward:
+    endpoint: 0.0.0.0:24224
+
+processors:
+  transform:
+    log_statements:
+      - context: log
+        statements:
+          - set(resource.attributes["service.name"], "api-gateway")
+          - merge_maps(attributes, ParseJSON(body), "upsert") where IsMatch(body, "^{")
+          - set(severity_text, attributes["level"]) where attributes["level"] != nil
+          - set(severity_number, 9) where attributes["level"] == "info"
+          - set(severity_number, 13) where attributes["level"] == "warn"
+          - set(severity_number, 17) where attributes["level"] == "error"
+
+  batch:
+    timeout: 1s
+    send_batch_size: 8192
+
+exporters:
+  otlphttp/loki:
+    endpoint: "http://loki:3100/otlp"
+
+service:
+  pipelines:
+    logs:
+      receivers: [fluentforward]
+      processors: [transform, batch]
+      exporters: [otlphttp/loki]

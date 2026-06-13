@@ -1,0 +1,2 @@
+ALTER TABLE loans
+ALTER COLUMN deadline DROP NOT NULL;

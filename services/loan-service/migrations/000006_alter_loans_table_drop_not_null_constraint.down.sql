@@ -1,0 +1,2 @@
+ALTER TABLE loans
+ALTER COLUMN deadline ADD NOT NULL;

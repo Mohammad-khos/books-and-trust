@@ -1,0 +1,770 @@
+basePath: /api/v1
+definitions:
+  contracts.ResponseError:
+    properties:
+      code:
+        type: string
+      details: {}
+      message:
+        type: string
+      status:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  contracts.ResponseSuccess:
+    properties:
+      data_message: {}
+      message:
+        type: string
+      status:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  internal_handler_http_loan_handler.BanUserRequest:
+    properties:
+      expired_at:
+        type: string
+      reason:
+        type: string
+      user_id:
+        type: string
+    required:
+    - user_id
+    type: object
+  internal_handler_http_loan_handler.ConfirmDeliveryRequest:
+    properties:
+      delivery_code:
+        type: string
+    required:
+    - delivery_code
+    type: object
+  internal_handler_http_loan_handler.CreateLoanRequest:
+    properties:
+      book_name:
+        type: string
+      deadline:
+        type: string
+      owner_id:
+        type: string
+    required:
+    - book_name
+    - owner_id
+    type: object
+  internal_handler_http_loan_handler.CreateLoanResponse:
+    properties:
+      book_name:
+        type: string
+      created_at:
+        type: string
+      deadline:
+        type: string
+      id:
+        type: string
+      owner_id:
+        type: string
+      user_id:
+        type: string
+    required:
+    - book_name
+    - id
+    - user_id
+    type: object
+  internal_handler_http_loan_handler.DeliveryLoanResponse:
+    properties:
+      delivery_code:
+        example: DEL-98765
+        type: string
+    type: object
+  internal_handler_http_loan_handler.GetLoanByIDResponse:
+    properties:
+      loan:
+        $ref: '#/definitions/internal_handler_http_loan_handler.Loan'
+    required:
+    - loan
+    type: object
+  internal_handler_http_loan_handler.Loan:
+    properties:
+      book_name:
+        example: The Go Programming Language
+        type: string
+      created_at:
+        example: "2026-06-03T12:00:00Z"
+        type: string
+      deadline:
+        example: "2026-06-16T18:30:00Z"
+        type: string
+      id:
+        example: loan-uuid-111
+        type: string
+      owner_id:
+        example: owner-uuid-456
+        type: string
+      status:
+        example: BORROWED
+        type: string
+      user_id:
+        example: user-uuid-123
+        type: string
+    required:
+    - book_name
+    - id
+    - user_id
+    type: object
+  internal_handler_http_loan_handler.UpdateLoanRequest:
+    properties:
+      book_name:
+        type: string
+      deadline:
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+    required:
+    - id
+    type: object
+  internal_handler_http_user_handler.LoginUserRequest:
+    properties:
+      credential:
+        type: string
+      password:
+        type: string
+    required:
+    - credential
+    - password
+    type: object
+  internal_handler_http_user_handler.RegisterUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        type: string
+      username:
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - username
+    type: object
+  internal_handler_http_user_handler.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      user_id:
+        type: string
+      username:
+        type: string
+    required:
+    - user_id
+    type: object
+host: localhost:8081
+info:
+  contact:
+    email: support@swagger.io
+    name: Support
+    url: http://www.swagger.io/support
+  description: این سرویس به عنوان درگاه اصلی برای دسترسی به میکروسرویس‌های امانت و
+    کاربران عمل می‌کند.
+  termsOfService: http://swagger.io/terms/
+  title: Books & Trust API Gateway
+  version: "1.0"
+paths:
+  /admin/users/ban:
+    post:
+      consumes:
+      - application/json
+      description: Bans a user by their UUID, preventing them from creating new loans
+        or borrowing books. This action is strictly restricted to Administrators.
+      parameters:
+      - description: Ban User Request Body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http_loan_handler.BanUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user banned successfully
+          schema:
+            $ref: '#/definitions/contracts.ResponseSuccess'
+        "400":
+          description: invalid ban user request
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "403":
+          description: forbidden - admin access required
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+      security:
+      - BearerAuth: []
+      summary: Ban a user from the platform
+      tags:
+      - admin
+      - loans
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: This method outputs the current status and metrics of the API Gateway
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: everything is fine
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Server Health Check
+      tags:
+      - system
+  /loans:
+    patch:
+      consumes:
+      - application/json
+      description: 'Updates a loan. Only the Lender (UserID) or Borrower (OwnerID)
+        can update it. Note: The borrower cannot extend the deadline.'
+      parameters:
+      - description: Update Loan Request Body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http_loan_handler.UpdateLoanRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: loan updated successfully
+          schema:
+            $ref: '#/definitions/contracts.ResponseSuccess'
+        "400":
+          description: invalid update loan request
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "403":
+          description: you can not update this loan / borrower cannot extend the deadline
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "404":
+          description: loan record not found
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+      security:
+      - BearerAuth: []
+      summary: Update an existing loan
+      tags:
+      - loans
+    post:
+      consumes:
+      - application/json
+      description: Creates a new loan record by calling the internal loan microservice.
+        Only the user themselves can initiate the loan.
+      parameters:
+      - description: Create Loan Request Body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http_loan_handler.CreateLoanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: loan successfully created
+          schema:
+            allOf:
+            - $ref: '#/definitions/contracts.ResponseSuccess'
+            - properties:
+                data_message:
+                  $ref: '#/definitions/internal_handler_http_loan_handler.CreateLoanResponse'
+              type: object
+        "400":
+          description: invalid create loan request
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "403":
+          description: you can not create loan
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+      security:
+      - BearerAuth: []
+      summary: Create a new loan
+      tags:
+      - loans
+  /loans/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Fetches the details of a specific loan using its UUID from the
+        URL parameter. Only the Lender (UserID) or Borrower (OwnerID) involved in
+        the loan can access it.
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: loan fetched successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/contracts.ResponseSuccess'
+            - properties:
+                data_message:
+                  $ref: '#/definitions/internal_handler_http_loan_handler.GetLoanByIDResponse'
+              type: object
+        "400":
+          description: invalid url param
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "403":
+          description: you can not get loan
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "404":
+          description: loan record not found
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+      security:
+      - BearerAuth: []
+      summary: Get loan details by ID
+      tags:
+      - loans
+  /loans/{id}/claim:
+    post:
+      consumes:
+      - application/json
+      description: Allows an authenticated user to claim/borrow an available book
+        loan by its ID. The user cannot be the owner of the loan.
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user banned successfully
+          schema:
+            $ref: '#/definitions/contracts.ResponseSuccess'
+        "400":
+          description: invalid url param
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "403":
+          description: forbidden - cannot claim own loan or user is banned
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "404":
+          description: loan record not found
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "409":
+          description: conflict - loan already claimed by another user
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+      security:
+      - BearerAuth: []
+      summary: Claim an available loan position
+      tags:
+      - loans
+  /loans/{id}/confirm-delivery:
+    post:
+      consumes:
+      - application/json
+      description: Allows the loan owner to input the 6-digit verification code received
+        from the borrower to finalize and complete the loan.
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Delivery Code Body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http_loan_handler.ConfirmDeliveryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: loan delivery confirmed successfully
+          schema:
+            $ref: '#/definitions/contracts.ResponseSuccess'
+        "400":
+          description: invalid loan id or missing code
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "404":
+          description: loan not found
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+      security:
+      - BearerAuth: []
+      summary: Confirm loan delivery using OTP code
+      tags:
+      - loans
+  /loans/{id}/delivery:
+    post:
+      consumes:
+      - application/json
+      description: Updates the status of a loan to indicate that the book has been
+        physically delivered. Returns a unique delivery confirmation code.
+      parameters:
+      - description: Loan UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: loan delivered successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/contracts.ResponseSuccess'
+            - properties:
+                data_message:
+                  $ref: '#/definitions/internal_handler_http_loan_handler.DeliveryLoanResponse'
+              type: object
+        "400":
+          description: invalid url param
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "403":
+          description: forbidden - you do not have permission to update this loan
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "404":
+          description: loan not found
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+      security:
+      - BearerAuth: []
+      summary: Mark a loan as delivered
+      tags:
+      - loans
+  /loans/owner/{ownerID}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all loans shared or owned by a specific user.
+        Users can only fetch their own loan lists (ownerID must match the authenticated
+        user ID).
+      parameters:
+      - description: Owner User UUID
+        in: path
+        name: ownerID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: loans fetched successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/contracts.ResponseSuccess'
+            - properties:
+                data_message:
+                  items:
+                    $ref: '#/definitions/internal_handler_http_loan_handler.Loan'
+                  type: array
+              type: object
+        "400":
+          description: invalid url param
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "403":
+          description: you cannot access these loans
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/contracts.ResponseError'
+      security:
+      - BearerAuth: []
+      summary: List loans by owner ID
+      tags:
+      - loans
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a user account from the system using their unique ID provided
+        in the URL path. Only the authenticated user themselves can delete their own
+        account.
+      parameters:
+      - description: User ID to delete
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: "{ \"message\": \"user\t\t\t\t\t\t\t\t\t\t\t\t\tsuccessfully\tdeleted\",
+            \"data\": null }"
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: "{ \"code\": \"BAD_REQUEST\", \"message\": \"string\", \"details\":
+            \"invalid\tdelete\t\t\tuser\trequest\" }"
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: "{ \"code\": \"FORBIDDEN\", \"message\": \"string\", \"details\":
+            \"you\t\tdo\t\t\t\tnot\t\thave\tpermission\tto\tdelete\tthis\tuser\" }"
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: '{ "code": "INTERNAL_SERVER_ERROR", "message": "string", "details":
+            "" }'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete user account
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/json
+      description: Fetches user details from the user microservice using their unique
+        ID provided in the URL path.
+      parameters:
+      - description: User id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: "{ \"message\": \"user\t\t\t\t\t\t\t\t\t\t\t\t\tsuccessfully\tfetched\",
+            \"data\": { \"user_id\": \"string\", \"name\": \"string\", \"email\":
+            \"string\", \"username\": \"string\" } }"
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: "{ \"code\": \"BAD_REQUEST\", \"message\": \"string\", \"details\":
+            \"invalid\tget\t\t\t\tuser\trequest\" }"
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: '{ "code": "INTERNAL_SERVER_ERROR", "message": "string", "details":
+            "" }'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - Users
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Accepts user credentials, validates them against the user service
+        via gRPC, and returns a JWT access token upon successful authentication.
+      parameters:
+      - description: User login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http_user_handler.LoginUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: "{ \"message\": \"user\t\t\t\t\t\t\t\t\t\t\t\t\t\tsuccessfully\tlogged\tin\",
+            \"data\": { \"user_id\": \"string\", \"token\": \"string\", \"token_type\":
+            \"string\" } }"
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: "{ \"code\": \"BAD_REQUEST\", \"message\": \"string\", \"details\":
+            \"invalid\t\tuser\t\t\tlogin\trequest\" }"
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: "{ \"code\": \"UNAUTHENTICATED\", \"message\": \"string\",
+            \"details\": \"invalid\tusername\t\tor\t\tpassword\" }"
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: '{ "code": "INTERNAL_SERVER_ERROR", "message": "string", "details":
+            "" }'
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Authenticate and login user
+      tags:
+      - Users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Accepts user registration details and registers a new account.
+      parameters:
+      - description: User registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http_user_handler.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: "{ \"message\": \"user\tsuccessfully\tregistered\", \"data\":
+            { \"user_id\": \"string\", \"email\": \"string\", \"created_at\": \"string\"
+            } }"
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: '{ "code": "BAD_REQUEST", "message": "string", "details": "string"
+            }'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: '{ "code": "INTERNAL_SERVER_ERROR", "message": "string", "details":
+            "" }'
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register a new user
+      tags:
+      - Users
+  /users/update:
+    patch:
+      consumes:
+      - application/json
+      description: Updates an existing user's information via gRPC user service.
+      parameters:
+      - description: User update details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_http_user_handler.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: "{ \"message\": \"user\t\t\t\t\t\t\t\t\t\t\t\t\tsuccessfully\tupdated\",
+            \"data\": { \"user_id\": \"string\", \"name\": \"string\", \"email\":
+            \"string\", \"username\": \"string\" } }"
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: "{ \"code\": \"BAD_REQUEST\", \"message\": \"string\", \"details\":
+            \"invalid\tuser\t\t\tupdate\trequest\" }"
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: '{ "code": "INTERNAL_SERVER_ERROR", "message": "string", "details":
+            "" }'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user details
+      tags:
+      - Users
+securityDefinitions:
+  BearerAuth:
+    description: 'تایپ کنید: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

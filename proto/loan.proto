@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package loan;
+
+option go_package = "/shared/proto/loan;loan";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+
+service LoanService {
+  rpc CreateLoan(CreateLoanRequest) returns (CreateLoanResponse);
+
+  rpc ClaimLoan(ClaimLoanRequest) returns (google.protobuf.Empty);
+
+  rpc UpdateLoan(UpdateLoanRequest) returns (google.protobuf.Empty);
+
+  rpc GetLoanByID(GetLoanByIDRequest) returns (GetLoanByIDResponse);
+
+  rpc ListLoansByOwner(ListLoansByOwnerRequest) returns (ListLoansByOwnerResponse);
+
+  rpc BanUser(BanUserRequest) returns (google.protobuf.Empty);
+
+  rpc DeliveryLoan(DeliveryLoanRequest) returns (DeliveryLoanResponse);
+
+  rpc ConfirmDelivery(ConfirmDeliveryRequest) returns (google.protobuf.Empty) ;
+}
+
+enum LoanStatus {
+  LOAN_STATUS_UNSPECIFIED = 0;
+  BORROWED = 1;
+  RETURN_PENDING = 2; 
+  RETURNED = 3;
+}
+
+message Loan {
+  string id = 1;
+  string owner_id = 2;
+  string user_id = 3;
+  string book_name = 4;
+  LoanStatus status = 5;
+  google.protobuf.Timestamp deadline = 6;
+  google.protobuf.Timestamp returned_at = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  google.protobuf.Timestamp deleted_at = 10;
+  string delivery_code = 11;
+}
+
+message CreateLoanRequest {
+  string id = 1;
+  string owner_id = 2;
+  string user_id = 3;
+  string book_name = 4;
+  google.protobuf.Timestamp  deadline = 5;
+}
+
+message CreateLoanResponse {
+  Loan loan = 1;
+}
+
+message ClaimLoanRequest {
+    string loan_id   = 1; 
+    string user_id  = 2; 
+}
+
+message UpdateLoanRequest {
+    string id = 1;         
+    string book_name = 2;  
+    LoanStatus status = 3;
+    google.protobuf.Timestamp deadline = 4;     
+    string updater_id = 5; 
+}
+
+message GetLoanByIDRequest {
+  string loan_id = 1;
+}
+
+message GetLoanByIDResponse {
+  Loan loan = 1;
+}
+
+message ListLoansByOwnerRequest {
+  string owner_id = 1;
+}
+
+message ListLoansByOwnerResponse {
+  repeated Loan loans = 1;
+}
+
+message BanUserRequest {
+  string user_id = 1;
+  string reason = 2;
+  google.protobuf.Timestamp expired_at = 3;
+}
+
+message DeliveryLoanRequest {
+  string loanID = 1; 
+  string updater_id = 2;
+}
+
+message DeliveryLoanResponse {
+  string delivery_code = 1;
+}
+message ConfirmDeliveryRequest {
+  string loanID = 1; 
+  string delivery_code = 2;
+  string owner_id = 3;
+}

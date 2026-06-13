@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY ,
+    name VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    is_banned BOOLEAN DEFAULT false,
+    created_at  TIMESTAMP(0) WITH TIME ZONE DEFAULT NOW() ,
+    updated_at  TIMESTAMP(0) WITH TIME ZONE ,
+    deleted_at  TIMESTAMP(0) WITH TIME ZONE
+);

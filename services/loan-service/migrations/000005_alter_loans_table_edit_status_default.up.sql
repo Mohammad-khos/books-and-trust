@@ -1,0 +1,1 @@
+ALTER TABLE loans ALTER COLUMN status SET DEFAULT 'unspecified';

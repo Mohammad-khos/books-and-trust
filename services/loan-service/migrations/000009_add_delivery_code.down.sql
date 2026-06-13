@@ -1,0 +1,2 @@
+ALTER TABLE loans 
+DROP COLUMN delivery_code VARCHAR(255) ;

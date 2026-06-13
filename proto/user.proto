@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "/shared/proto/user;user";
+
+import  "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service UserService {
+  rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
+
+  rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
+
+  rpc GetUserByID(GetUserByIDRequest) returns (GetUserByIDResponse);
+
+  rpc DeleteUserByID(DeleteUserByIDRequest) returns (google.protobuf.Empty);
+
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  string username = 3;
+  string email = 4;
+  bool fine = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message RegisterUserRequest {
+  string name = 1;
+  string username = 2;
+  string email = 3;
+  string password = 4;
+}
+
+message RegisterUserResponse {
+  User user = 1;
+}
+
+message LoginUserRequest {
+  string username_or_email = 1;
+  string password = 2;
+}
+
+message LoginUserResponse {
+  string access_token = 1;
+  string token_type = 2;
+  User user = 3;
+}
+
+message GetUserByIDRequest {
+  string id = 1;
+}
+
+message GetUserByIDResponse {
+  User user = 1;
+}
+
+message DeleteUserByIDRequest {
+  string user_id = 1;
+}
+
+message UpdateUserRequest {
+  string user_id = 1;
+  optional string name = 2;
+  optional string username = 3;
+  optional string email = 4;
+  optional string password = 5;
+
+}
+message UpdateUserResponse {
+  User user = 1;
+}
+
+message VerifyTokenRequest {
+  string token = 1;
+}
+
+message VerifyTokenResponse {
+  string user_id = 1;
+}
