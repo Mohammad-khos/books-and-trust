@@ -44,7 +44,7 @@ func TestBanUser(t *testing.T) {
 		svc := service.NewLoanService(&mockLoanRepository{})
 		banInput := &domain.BannedUser{
 			UserID: targetUserID,
-			Reason: "", // 🚨 دلیل بن نباید خالی باشد
+			Reason: "", 
 		}
 
 		err := svc.BanUser(context.Background(), banInput)

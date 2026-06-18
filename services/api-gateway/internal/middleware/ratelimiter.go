@@ -25,18 +25,16 @@ func NewRateLimiterMiddleware(
 	return &RateLimiterMiddleware{
 		ratelimiter: rt,
 		logger:      logger,
-		MaxTokens:1000 ,
-		RefillRate: 10,
+		MaxTokens:MaxTokens ,
+		RefillRate: RefillRate,
 	}
 }
 
 func (m *appMiddlewareHub) GlobalRateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		key := "rl:global"
-		maxTokens := 1000
-		refillRate := 100
 
-		allowed, err := m.limiter.ratelimiter.Allow(r.Context(), key, maxTokens, refillRate)
+		allowed, err := m.limiter.ratelimiter.Allow(r.Context(), key, m.limiter.MaxTokens, m.limiter.RefillRate)
 		if err != nil {
 			next.ServeHTTP(w, r)
 			return

@@ -104,13 +104,10 @@ func TestCreateLoan(t *testing.T) {
 	})
 }
 
-// ✅ تست سناریوهای UpdateLoan
 func TestUpdateLoan(t *testing.T) {
 	t.Run("failed_missing_loan_id", func(t *testing.T) {
-		// 🚀 شبیه‌سازی لایه سرویس و ریپو بر اساس اروری که از زنجیره دیتابیس (In Chain) دریافت کردی:
 		repo := &mockLoanRepository{
 			onUpdate: func(l *domain.Loan) error {
-				// وقتی آی‌دی صفر باشه، ریپازیتوری ارور فیلدها رو برمی‌گردونه
 				return errors.New("invalid fields to update")
 			},
 		}
@@ -129,7 +126,6 @@ func TestUpdateLoan(t *testing.T) {
 
 		err := svc.UpdateLoan(context.Background(), loanInput , loanInput.UserID)
 
-		// 🚀 اینجا تست رو با همان خطای زنجیره‌ای (In Chain) که دیتابیس و ریپو پس می‌دن هماهنگ کردیم
 		assert.ErrorContains(t, err, "invalid fields to update")
 	})
 }

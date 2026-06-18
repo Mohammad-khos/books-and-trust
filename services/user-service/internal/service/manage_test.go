@@ -56,11 +56,8 @@ func TestUserService_UpdateUser(t *testing.T) {
 			},
 		}
 
-		// ۱. ابتدا سیستم بررسی می‌کند کاربر وجود دارد یا خیر
 		mockRepo.On("GetByID", mock.Anything, userID).Return(existingUser, nil).Once()
-		// ۲. چون پسورد فرستاده شده، آن را هش می‌کند
 		mockHasher.On("Hash", newPassword).Return(fakeHash, nil)
-		// ۳. متد آپدیت ریپازیتوری صدا زده می‌شود
 		mockRepo.On("Update", mock.Anything, updateInput).Return(nil)
 
 		updatedUserMock := &domain.User{
@@ -90,7 +87,6 @@ func TestUserService_UpdateUser(t *testing.T) {
 		unknownID := uuid.New()
 		updateInput := &domain.User{ID: unknownID, Name: "New Name"}
 
-		// ریپازیتوری اعلام می‌کند این کاربر کلاً وجود ندارد
 		mockRepo.On("GetByID", mock.Anything, unknownID).Return(nil, domain.ErrResourceNotFound)
 
 		svc := service.NewUserService(mockRepo, mockHasher, mockAuth)
@@ -99,7 +95,6 @@ func TestUserService_UpdateUser(t *testing.T) {
 		assert.ErrorIs(t, err, domain.ErrResourceNotFound)
 		assert.Nil(t, result)
 
-		// متدهای دیگر دیتابیس یا هش نباید اصلاً صدا زده شوند
 		mockRepo.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
 		mockHasher.AssertNotCalled(t, "Hash", mock.Anything)
 	})

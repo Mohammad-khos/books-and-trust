@@ -111,7 +111,7 @@ func NewApplication() (*Application, func()) {
 	authMidd := middleware.NewAuthMiddleware(logger, userClient)
 	cspMidd := middleware.NewCSPMIddleware("self", "self", "self")
 	adminMidd := middleware.NewAdminMiddleware("ADMINS_FILE_PATH", logger)
-	limiter := middleware.NewRateLimiterMiddleware(rt, logger, 20, 2)
+	limiter := middleware.NewRateLimiterMiddleware(rt, logger, 1000, 10)
 	securityMidd := middleware.NewSecurityHeadersMiddleware()
 	reqMidd := middleware.NewRequestLoggerMiddleware(logger)
 	metricsMidd := middleware.NewMetricsMiddleware(metrics)

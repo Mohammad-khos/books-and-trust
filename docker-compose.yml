@@ -9,7 +9,7 @@ services:
     memswap_limit: 1g
     stop_grace_period: 30s
     ports:
-      - "6379:6379"
+      - "6379:6379" 
     command: redis-server --requirepass $REDIS_PASSWORD --appendonly yes
     volumes:
       - redis_data:/data
@@ -33,7 +33,7 @@ services:
       POSTGRES_USER: ${USER_DB_USER}
       POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
     ports:
-      - "5434:5432"
+      - "5434:5432" 
     volumes:
       - postgres_user_data:/var/lib/postgresql/data
     healthcheck:
@@ -80,7 +80,7 @@ services:
       POSTGRES_USER: ${LOAN_DB_USER}
       POSTGRES_PASSWORD: ${LOAN_DB_PASSWORD}
     ports:
-      - "5433:5432"
+      - "5433:5432" 
     volumes:
       - postgres_loans_data:/var/lib/postgresql/data/
     healthcheck:
@@ -108,61 +108,61 @@ services:
         condition: service_healthy
     networks:
       - db
-  pgadmin_users:
-    image: dpage/pgadmin4:${PGADMIN_VERSION}
-    container_name: pgadmin_users
-    restart: unless-stopped
-    init: true
-    # security_opt:
-    #   - no-new-privileges:true
-    pids_limit: 100
-    cpus: "0.5"
-    mem_limit: 512m
-    memswap_limit: 512m
-    stop_grace_period: 20s
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_USERS_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_USERS_DEFAULT_PASSWORD}
-      PGADMIN_LISTEN_PORT: ${PGADMIN_USERS_LISTEN_PORT}
-    ports:
-      - "10101:80"
-    depends_on:
-      - user_db
-    tmpfs:
-      - /tmp:rw,nosuid,nodev,noexec,size=64m
-      - /var/lib/pgadmin:rw,nosuid,nodev,noexec,size=128m
-      - /run:rw,nosuid,nodev,noexec,size=16m
-    networks:
-      - app
-      - db
+  # Users Database Pgadmin
+  # pgadmin_users:
+  #   image: dpage/pgadmin4:${PGADMIN_VERSION}
+  #   container_name: pgadmin_users
+  #   restart: unless-stopped
+  #   init: true
+  #   # security_opt:
+  #   #   - no-new-privileges:true
+  #   pids_limit: 100
+  #   cpus: "0.5"
+  #   mem_limit: 512m
+  #   memswap_limit: 512m
+  #   stop_grace_period: 20s
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_USERS_DEFAULT_EMAIL}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_USERS_DEFAULT_PASSWORD}
+  #     PGADMIN_LISTEN_PORT: ${PGADMIN_USERS_LISTEN_PORT}
+  #   ports:
+  #     - "10101:80"
+  #   depends_on:
+  #     - user_db
+  #   tmpfs:
+  #     - /tmp:rw,nosuid,nodev,noexec,size=64m
+  #     - /var/lib/pgadmin:rw,nosuid,nodev,noexec,size=128m
+  #     - /run:rw,nosuid,nodev,noexec,size=16m
+  #   networks:
+  #     - app
+  #     - db
 
-  pgadmin_loans:
-    image: dpage/pgadmin4:${PGADMIN_VERSION}
-    container_name: pgadmin_trusts
-    restart: unless-stopped
-    init: true
-    # security_opt:
-    #   - no-new-privileges:true
-    pids_limit: 100
-    cpus: "0.5"
-    mem_limit: 512m
-    memswap_limit: 512m
-    stop_grace_period: 20s
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_LOANS_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_LOANS_DEFAULT_PASSWORD}
-      PGADMIN_LISTEN_PORT: ${PGADMIN_LOANS_LISTEN_PORT}
-    ports:
-      - "10102:80"
-    depends_on:
-      - loan_db
-    tmpfs:
-      - /tmp:rw,nosuid,nodev,noexec,size=64m
-      - /var/lib/pgadmin:rw,nosuid,nodev,noexec,size=128m
-      - /run:rw,nosuid,nodev,noexec,size=16m
-    networks:
-      - app
-      - db
+  # Loans Database Pgadmin
+  # pgadmin_loans:
+  #   image: dpage/pgadmin4:${PGADMIN_VERSION}
+  #   container_name: pgadmin_trusts
+  #   restart: unless-stopped
+  #   init: true
+  #   pids_limit: 100
+  #   cpus: "0.5"
+  #   mem_limit: 512m
+  #   memswap_limit: 512m
+  #   stop_grace_period: 20s
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_LOANS_DEFAULT_EMAIL}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_LOANS_DEFAULT_PASSWORD}
+  #     PGADMIN_LISTEN_PORT: ${PGADMIN_LOANS_LISTEN_PORT}
+  #   ports:
+  #     - "10102:80"
+  #   depends_on:
+  #     - loan_db
+  #   tmpfs:
+  #     - /tmp:rw,nosuid,nodev,noexec,size=64m
+  #     - /var/lib/pgadmin:rw,nosuid,nodev,noexec,size=128m
+  #     - /run:rw,nosuid,nodev,noexec,size=16m
+  #   networks:
+  #     - app
+  #     - db
 
   api_gateway:
     build:
@@ -369,6 +369,6 @@ volumes:
 networks:
   db:
     driver: bridge
-    # internal: true #on prodotion env
+    internal: true
   app:
     driver: bridge
