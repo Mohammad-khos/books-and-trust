@@ -20,9 +20,6 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download -x
 
 
-# # Copy the rest of the application source code
-# COPY . .
-
 FROM deps AS builder
 
 

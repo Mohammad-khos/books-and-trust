@@ -20,8 +20,6 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download -x
 
 
-# Copy the rest of the application source code
-# COPY . .
 
 FROM deps AS builder
 
@@ -51,9 +49,6 @@ FROM scratch AS runtime
 COPY --from=builder /app/loan-service /app/loan-service
 
 WORKDIR /app
-
-
-EXPOSE 8081
 
 # Command to run the executable
 # The binary is now at /app/loan-service

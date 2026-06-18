@@ -30,7 +30,7 @@ func (r *SQLRepository) Create(ctx context.Context, user *domain.User) error {
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	
+
 	err := r.db.WithContext(ctx).Create(user).Error
 	if err == gorm.ErrDuplicatedKey {
 		span.RecordError(err)

@@ -26,7 +26,7 @@ import (
 const bufSize = 1024 * 1024
 
 func TestRegisterUser_GRPC_Integration(t *testing.T) {
-	dsn := "host=localhost user=users_admin password=secretpass dbname=users port=5434 sslmode=disable"
+	dsn := "host=user_db user=users_admin password=secretpass dbname=users port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	assert.NoError(t, err)
 

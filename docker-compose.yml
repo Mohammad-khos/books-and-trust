@@ -8,8 +8,6 @@ services:
     mem_limit: 1g
     memswap_limit: 1g
     stop_grace_period: 30s
-    ports:
-      - "6379:6379" 
     command: redis-server --requirepass $REDIS_PASSWORD --appendonly yes
     volumes:
       - redis_data:/data
@@ -32,8 +30,6 @@ services:
       POSTGRES_DB: ${USER_DB_NAME}
       POSTGRES_USER: ${USER_DB_USER}
       POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
-    ports:
-      - "5434:5432" 
     volumes:
       - postgres_user_data:/var/lib/postgresql/data
     healthcheck:
@@ -79,8 +75,6 @@ services:
       POSTGRES_DB: ${LOAN_DB_NAME}
       POSTGRES_USER: ${LOAN_DB_USER}
       POSTGRES_PASSWORD: ${LOAN_DB_PASSWORD}
-    ports:
-      - "5433:5432" 
     volumes:
       - postgres_loans_data:/var/lib/postgresql/data/
     healthcheck:
@@ -233,10 +227,10 @@ services:
     volumes:
       - ./infrastructure/deployment/otel-collector-config.yml:/etc/otelcol/config.yml
     command: ["--config=/etc/otelcol/config.yml"]
-    ports:
-      - "${OTLP_GRPC_HOST_PORT}:4317" # OTLP gRPC
-      - "${OTLP_HTTP_HOST_PORT}:4318" # OTLP HTTP
-      - "${OTLP_FLUENTD_HOST_PORT}:24224" # Fluentd
+    # ports:
+    #   - "${OTLP_GRPC_HOST_PORT}:4317" # OTLP gRPC
+    #   - "${OTLP_HTTP_HOST_PORT}:4318" # OTLP HTTP
+    #   - "${OTLP_FLUENTD_HOST_PORT}:24224" # Fluentd
     depends_on:
       - loki
     networks:
@@ -306,8 +300,6 @@ services:
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
       JWT_SECRET: ${JWT_SECRET}
       JWT_AUD: ${JWT_AUD}
-    ports:
-      - "${USER_SERVICE_HOST_PORT}:9091"
     depends_on:
       user_db:
         condition: service_healthy
@@ -347,8 +339,6 @@ services:
       DATABASE_URI: ${LOANS_DB_URI}
       ENVIRONMENT: ${ENVIRONMENT}
       JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
-    ports:
-      - "${LOAN_SERVICE_HOST_PORT}:9092"
     depends_on:
       loan_db:
         condition: service_healthy
