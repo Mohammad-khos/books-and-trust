@@ -3,6 +3,7 @@ package loanHandler_test
 import (
 	"books-and-trust/services/api-gateway/internal/client"
 	loanHandler "books-and-trust/services/api-gateway/internal/handler/http/loan_handler"
+	"books-and-trust/services/api-gateway/internal/middleware"
 	pb "books-and-trust/shared/proto/loan"
 	"context"
 	"net/http"
@@ -40,7 +41,7 @@ func TestDeliveryLoanHandler(t *testing.T) {
 		{
 			name:           "Failure - Empty URL ID parameter",
 			ctxUserID:      "lender-uuid-123",
-			urlLoanID:      "", // شبیه‌سازی نبودن آیدی در مسیر ❌
+			urlLoanID:      "",
 			mockSetup:      nil,
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -108,7 +109,7 @@ func TestDeliveryLoanHandler(t *testing.T) {
 
 			// ۴. تزریق کانتکست یوزر آیدی (فرد آپدیت کننده)
 			if tt.ctxUserID != nil {
-				ctx := context.WithValue(req.Context(), userIDKey, tt.ctxUserID)
+				ctx := context.WithValue(req.Context(), middleware.UserIDKey, tt.ctxUserID)
 				req = req.WithContext(ctx)
 			}
 

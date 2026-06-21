@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"net"
-	"os"
 	"testing"
 	"time"
 
@@ -22,29 +21,20 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func TestUserManagement_GRPC_Integration(t *testing.T) {
 	ctx := context.Background()
 
-	testDBPath := "user_test.db"
-	db, err := gorm.Open(sqlite.Open(testDBPath), &gorm.Config{})
-	assert.NoError(t, err)
+    db, container, err := setupPostgresContainer(ctx)
+    assert.NoError(t, err)
+    defer func() { _ = container.Terminate(ctx) }()
 
-	defer func() {
-		sqlDB, _ := db.DB()
-		if sqlDB != nil {
-			if err := sqlDB.Close(); err != nil {
-				t.Logf("Failed to closing sql database: %v", err)
-			}
-		}
-		_ = os.Remove(testDBPath)
-	}()
-
-	err = db.AutoMigrate(&domain.User{})
-	assert.NoError(t, err)
+    err = db.AutoMigrate(&domain.User{})
+    assert.NoError(t, err)
+    if err != nil {
+        return
+    }
 
 	userRepo := repo.NewSQLRepository(db)
 	bcryptHasher := crypto.NewBcryptHasher()
@@ -66,7 +56,7 @@ func TestUserManagement_GRPC_Integration(t *testing.T) {
 	}()
 	defer grpcServer.GracefulStop()
 
-	conn, err := grpc.NewClient("passthrough:///bufnet",
+	conn, err := grpc.DialContext(ctx, "bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return lis.Dial()
 		}),

@@ -2,6 +2,7 @@ package userHandler
 
 import (
 	"books-and-trust/services/api-gateway/internal/client"
+	"books-and-trust/services/api-gateway/internal/middleware"
 	pb "books-and-trust/shared/proto/user"
 	"bytes"
 	"context"
@@ -16,9 +17,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
-
-type contextKey string
-const userIDKey contextKey = "userID"
 
 func TestUpdateUserHandler(t *testing.T) {
 	tests := []struct {
@@ -52,7 +50,7 @@ func TestUpdateUserHandler(t *testing.T) {
 			requestBody: map[string]string{
 				"user_id":  "usr_123",
 				"name":     "Mammad Dev",
-				"email":    "invalid-email-format@test.com", 
+				"email":    "invalid-email-format@test.com",
 				"username": "mammad_updated",
 			},
 			mockBehavior: func(ctx context.Context, in *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
@@ -89,6 +87,7 @@ func TestUpdateUserHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			req.Header.Set("Content-Type", "application/json")
+			req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, tt.requestBody["user_id"]))
 
 			rr := httptest.NewRecorder()
 			handler.UpdateUser(rr, req)
@@ -144,7 +143,9 @@ func TestGetUserByIDHandler(t *testing.T) {
 
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("id", tt.userIDParam)
-			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+			ctx := context.WithValue(req.Context(), chi.RouteCtxKey, rctx)
+			ctx = context.WithValue(ctx, middleware.UserIDKey, tt.userIDParam)
+			req = req.WithContext(ctx)
 
 			rr := httptest.NewRecorder()
 			handler.GetUserByIDHandler(rr, req)
@@ -160,14 +161,14 @@ func TestDeleteUserHandler(t *testing.T) {
 	tests := []struct {
 		name           string
 		userIDParam    string
-		contextUserID  string 
+		contextUserID  string
 		mockBehavior   func(ctx context.Context, in *pb.DeleteUserByIDRequest) (*emptypb.Empty, error)
 		expectedStatus int
 	}{
 		{
 			name:          "Success - Authorized Delete",
 			userIDParam:   "usr_mammad",
-			contextUserID: "usr_mammad", 
+			contextUserID: "usr_mammad",
 			mockBehavior: func(ctx context.Context, in *pb.DeleteUserByIDRequest) (*emptypb.Empty, error) {
 				return &emptypb.Empty{}, nil
 			},
@@ -177,7 +178,7 @@ func TestDeleteUserHandler(t *testing.T) {
 			name:           "Failure - Forbidden (403 ID Mismatch)",
 			userIDParam:    "usr_target",
 			contextUserID:  "usr_hacker",
-			mockBehavior:   nil,          
+			mockBehavior:   nil,
 			expectedStatus: http.StatusForbidden,
 		},
 		{
@@ -201,7 +202,7 @@ func TestDeleteUserHandler(t *testing.T) {
 
 			req, _ := http.NewRequest(http.MethodDelete, "/api/v1/users/"+tt.userIDParam, nil)
 
-			ctx := context.WithValue(req.Context(),userIDKey, tt.contextUserID)
+			ctx := context.WithValue(req.Context(), middleware.UserIDKey, tt.contextUserID)
 
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("id", tt.userIDParam)

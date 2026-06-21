@@ -19,16 +19,21 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 const bufSize = 1024 * 1024
 
 func TestRegisterUser_GRPC_Integration(t *testing.T) {
-	dsn := "host=user_db user=users_admin password=secretpass dbname=users port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	assert.NoError(t, err)
+    ctx := context.Background()
+    db, container, err := setupPostgresContainer(ctx)
+    assert.NoError(t, err)
+    defer func() { _ = container.Terminate(ctx) }()
+
+    err = db.AutoMigrate(&domain.User{})
+    assert.NoError(t, err)
+    if err != nil {
+        return
+    }
 
 	userRepo := repo.NewSQLRepository(db)
 	bcryptHasher := crypto.NewBcryptHasher()
@@ -48,8 +53,8 @@ func TestRegisterUser_GRPC_Integration(t *testing.T) {
 	}()
 	defer baseServer.Stop()
 
-	ctx := context.Background()
-	conn, err := grpc.NewClient("passthrough:///bufnet",
+	dialCtx := context.Background()
+	conn, err := grpc.DialContext(dialCtx, "bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return lis.Dial()
 		}),

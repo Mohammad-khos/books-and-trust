@@ -19,18 +19,17 @@ import (
 
 	"books-and-trust/services/api-gateway/internal/client"
 	loanHandler "books-and-trust/services/api-gateway/internal/handler/http/loan_handler"
+	"books-and-trust/services/api-gateway/internal/middleware"
 	pb "books-and-trust/shared/proto/loan"
 )
 
-type contextKey string
-const userIDKey contextKey = "userID"
 func TestCreateLoanHandler(t *testing.T) {
 	fixedTime := time.Now().UTC()
 
 	tests := []struct {
 		name           string
 		ctxUserID      any
-		requestBody    any 
+		requestBody    any
 		mockBehavior   func(ctx context.Context, in *pb.CreateLoanRequest) (*pb.CreateLoanResponse, error)
 		expectedStatus int
 	}{
@@ -38,7 +37,7 @@ func TestCreateLoanHandler(t *testing.T) {
 			name:      "Success - Valid Create Loan",
 			ctxUserID: "user-uuid-123",
 			requestBody: map[string]any{
-				"user_id":   "user-uuid-123",
+				"owner_id":  "user-uuid-123",
 				"book_name": "Clean Architecture",
 				"deadline":  fixedTime.Add(24 * time.Hour).Format(time.RFC3339),
 			},
@@ -66,7 +65,7 @@ func TestCreateLoanHandler(t *testing.T) {
 			name:      "Failure - Validation Required Fields (Missing BookName)",
 			ctxUserID: "user-uuid-123",
 			requestBody: map[string]any{
-				"user_id": "user-uuid-123",
+				"owner_id": "user-uuid-123",
 			},
 			mockBehavior:   nil,
 			expectedStatus: http.StatusBadRequest,
@@ -75,7 +74,7 @@ func TestCreateLoanHandler(t *testing.T) {
 			name:      "Failure - Context User ID Missing",
 			ctxUserID: nil,
 			requestBody: map[string]any{
-				"user_id":   "user-uuid-123",
+				"owner_id":  "user-uuid-123",
 				"book_name": "Go Blueprints",
 			},
 			mockBehavior:   nil,
@@ -85,7 +84,7 @@ func TestCreateLoanHandler(t *testing.T) {
 			name:      "Failure - Context User ID Mismatch Forbidden",
 			ctxUserID: "wrong-user-uuid",
 			requestBody: map[string]any{
-				"user_id":   "user-uuid-123",
+				"owner_id":  "user-uuid-123",
 				"book_name": "Go Blueprints",
 			},
 			mockBehavior:   nil,
@@ -95,7 +94,7 @@ func TestCreateLoanHandler(t *testing.T) {
 			name:      "Failure - Internal Server Error from Microservice",
 			ctxUserID: "user-uuid-123",
 			requestBody: map[string]any{
-				"user_id":   "user-uuid-123",
+				"owner_id":  "user-uuid-123",
 				"book_name": "Go Blueprints",
 			},
 			mockBehavior: func(ctx context.Context, in *pb.CreateLoanRequest) (*pb.CreateLoanResponse, error) {
@@ -107,7 +106,7 @@ func TestCreateLoanHandler(t *testing.T) {
 			name:      "Failure - Microservice Returns Nil Loan",
 			ctxUserID: "user-uuid-123",
 			requestBody: map[string]any{
-				"user_id":   "user-uuid-123",
+				"owner_id":  "user-uuid-123",
 				"book_name": "Go Blueprints",
 			},
 			mockBehavior: func(ctx context.Context, in *pb.CreateLoanRequest) (*pb.CreateLoanResponse, error) {
@@ -140,7 +139,7 @@ func TestCreateLoanHandler(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 
 			if tt.ctxUserID != nil {
-				ctx := context.WithValue(req.Context(), userIDKey, tt.ctxUserID)
+				ctx := context.WithValue(req.Context(), middleware.UserIDKey, tt.ctxUserID)
 				req = req.WithContext(ctx)
 			}
 
@@ -173,8 +172,8 @@ func TestUpdateLoanHandler(t *testing.T) {
 					return &pb.GetLoanByIDResponse{
 						Loan: &pb.Loan{
 							Id:       "loan-uuid-777",
-							UserId:   "lender-uuid-456",   
-							OwnerId:  "borrower-uuid-123", 
+							UserId:   "lender-uuid-456",
+							OwnerId:  "borrower-uuid-123",
 							BookName: "Domain-Driven Design",
 						},
 					}, nil
@@ -185,9 +184,10 @@ func TestUpdateLoanHandler(t *testing.T) {
 			},
 			expectedStatus: http.StatusNoContent,
 		},
-		
+
 		{
 			name:      "Failure - Unauthorized user tries to update loan",
+			ctxUserID: "other-user-uuid",
 			requestBody: map[string]any{
 				"id": "loan-uuid-777",
 			},
@@ -235,7 +235,7 @@ func TestUpdateLoanHandler(t *testing.T) {
 					return nil, status.Error(codes.NotFound, "loan not found in microservice")
 				}
 			},
-			expectedStatus: http.StatusNotFound, 
+			expectedStatus: http.StatusNotFound,
 		},
 	}
 
@@ -265,7 +265,7 @@ func TestUpdateLoanHandler(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 
 			if tt.ctxUserID != nil {
-				ctx := context.WithValue(req.Context(), userIDKey, tt.ctxUserID)
+				ctx := context.WithValue(req.Context(), middleware.UserIDKey, tt.ctxUserID)
 				req = req.WithContext(ctx)
 			}
 
@@ -289,7 +289,7 @@ func TestGetLoanByIDHandler(t *testing.T) {
 	}{
 		{
 			name:      "Success - Owner (Lender) fetches loan details",
-			ctxUserID: "lender-uuid-456", 
+			ctxUserID: "lender-uuid-456",
 			urlLoanID: "loan-uuid-111",
 			mockSetup: func(m *mockLoanServiceClient) {
 				m.mockGetLoanByID = func(ctx context.Context, in *pb.GetLoanByIDRequest) (*pb.GetLoanByIDResponse, error) {
@@ -297,7 +297,7 @@ func TestGetLoanByIDHandler(t *testing.T) {
 						Loan: &pb.Loan{
 							Id:       "loan-uuid-111",
 							UserId:   "borrower-uuid-123",
-							OwnerId:  "lender-uuid-456", 
+							OwnerId:  "lender-uuid-456",
 							BookName: "The Go Programming Language",
 							Status:   pb.LoanStatus_BORROWED,
 						},
@@ -327,7 +327,7 @@ func TestGetLoanByIDHandler(t *testing.T) {
 		},
 		{
 			name:      "Failure - Forbidden user tries to access loan",
-			ctxUserID: "hacker-uuid-999", 
+			ctxUserID: "hacker-uuid-999",
 			urlLoanID: "loan-uuid-111",
 			mockSetup: func(m *mockLoanServiceClient) {
 				m.mockGetLoanByID = func(ctx context.Context, in *pb.GetLoanByIDRequest) (*pb.GetLoanByIDResponse, error) {
@@ -355,7 +355,7 @@ func TestGetLoanByIDHandler(t *testing.T) {
 			urlLoanID: "loan-uuid-111",
 			mockSetup: func(m *mockLoanServiceClient) {
 				m.mockGetLoanByID = func(ctx context.Context, in *pb.GetLoanByIDRequest) (*pb.GetLoanByIDResponse, error) {
-					return nil, nil 
+					return nil, nil
 				}
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -395,7 +395,7 @@ func TestGetLoanByIDHandler(t *testing.T) {
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 
 			if tt.ctxUserID != nil {
-				ctx := context.WithValue(req.Context(), userIDKey, tt.ctxUserID)
+				ctx := context.WithValue(req.Context(), middleware.UserIDKey, tt.ctxUserID)
 				req = req.WithContext(ctx)
 			}
 
@@ -419,48 +419,48 @@ func TestListLoanByOwner(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-    name:       "Success - Owner fetches their own loan list",
-    ctxUserID:  "owner-uuid-123", 
-    urlOwnerID: "owner-uuid-123", 
-    mockSetup: func(m *mockLoanServiceClient) {
-        m.mockListLoansByOwner = func(ctx context.Context, in *pb.ListLoansByOwnerRequest) (*pb.ListLoansByOwnerResponse, error) {
-            return &pb.ListLoansByOwnerResponse{
-                Loans: []*pb.Loan{
-                    {
-                        Id:        "loan-1",
-                        UserId:    "borrower-1",
-                        OwnerId:   "owner-uuid-123",
-                        BookName:  "Clean Code",
-                        Status:    pb.LoanStatus_BORROWED,
-                        Deadline:  timestamppb.New(fixedTime.Add(48 * time.Hour)),
-                        CreatedAt: timestamppb.New(fixedTime),
-                    },
-                    {
-                        Id:        "loan-2",
-                        UserId:    "borrower-2",
-                        OwnerId:   "owner-uuid-123",
-                        BookName:  "Refactoring",
-                        Status:    pb.LoanStatus_RETURNED,
-                        Deadline:  timestamppb.New(fixedTime.Add(96 * time.Hour)),
-                        CreatedAt: timestamppb.New(fixedTime),
-                    },
-                },
-            }, nil
-        }
-    },
-    expectedStatus: http.StatusOK,
-},
+			name:       "Success - Owner fetches their own loan list",
+			ctxUserID:  "owner-uuid-123",
+			urlOwnerID: "owner-uuid-123",
+			mockSetup: func(m *mockLoanServiceClient) {
+				m.mockListLoansByOwner = func(ctx context.Context, in *pb.ListLoansByOwnerRequest) (*pb.ListLoansByOwnerResponse, error) {
+					return &pb.ListLoansByOwnerResponse{
+						Loans: []*pb.Loan{
+							{
+								Id:        "loan-1",
+								UserId:    "borrower-1",
+								OwnerId:   "owner-uuid-123",
+								BookName:  "Clean Code",
+								Status:    pb.LoanStatus_BORROWED,
+								Deadline:  timestamppb.New(fixedTime.Add(48 * time.Hour)),
+								CreatedAt: timestamppb.New(fixedTime),
+							},
+							{
+								Id:        "loan-2",
+								UserId:    "borrower-2",
+								OwnerId:   "owner-uuid-123",
+								BookName:  "Refactoring",
+								Status:    pb.LoanStatus_RETURNED,
+								Deadline:  timestamppb.New(fixedTime.Add(96 * time.Hour)),
+								CreatedAt: timestamppb.New(fixedTime),
+							},
+						},
+					}, nil
+				}
+			},
+			expectedStatus: http.StatusOK,
+		},
 		{
 			name:           "Failure - Unauthorized to fetch another user's loans",
-			ctxUserID:      "owner-uuid-123", 
+			ctxUserID:      "owner-uuid-123",
 			urlOwnerID:     "someone-else-id",
-			mockSetup:      nil,               
+			mockSetup:      nil,
 			expectedStatus: http.StatusForbidden,
 		},
 		{
 			name:           "Failure - Empty ownerID URL parameter",
 			ctxUserID:      "owner-uuid-123",
-			urlOwnerID:     "", 
+			urlOwnerID:     "",
 			mockSetup:      nil,
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -469,10 +469,8 @@ func TestListLoanByOwner(t *testing.T) {
 			ctxUserID:  "owner-uuid-123",
 			urlOwnerID: "owner-uuid-123",
 			mockSetup: func(m *mockLoanServiceClient) {
-				m.LoanServiceClient = &mockLoanServiceClient{
-					mockListLoansByOwner: func(ctx context.Context, in *pb.ListLoansByOwnerRequest) (*pb.ListLoansByOwnerResponse, error) {
-						return nil, status.Error(codes.Internal, "database connection failed downstream")
-					},
+				m.mockListLoansByOwner = func(ctx context.Context, in *pb.ListLoansByOwnerRequest) (*pb.ListLoansByOwnerResponse, error) {
+					return nil, status.Error(codes.Internal, "database connection failed downstream")
 				}
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -482,10 +480,8 @@ func TestListLoanByOwner(t *testing.T) {
 			ctxUserID:  "owner-uuid-123",
 			urlOwnerID: "owner-uuid-123",
 			mockSetup: func(m *mockLoanServiceClient) {
-				m.LoanServiceClient = &mockLoanServiceClient{
-					mockListLoansByOwner: func(ctx context.Context, in *pb.ListLoansByOwnerRequest) (*pb.ListLoansByOwnerResponse, error) {
-						return nil, nil 
-					},
+				m.mockListLoansByOwner = func(ctx context.Context, in *pb.ListLoansByOwnerRequest) (*pb.ListLoansByOwnerResponse, error) {
+					return nil, nil
 				}
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -514,7 +510,7 @@ func TestListLoanByOwner(t *testing.T) {
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 
 			if tt.ctxUserID != nil {
-				ctx := context.WithValue(req.Context(), userIDKey, tt.ctxUserID)
+				ctx := context.WithValue(req.Context(), middleware.UserIDKey, tt.ctxUserID)
 				req = req.WithContext(ctx)
 			}
 

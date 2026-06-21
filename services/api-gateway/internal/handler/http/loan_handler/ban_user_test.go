@@ -31,7 +31,7 @@ func TestBanUserHandler(t *testing.T) {
 			body: map[string]string{"user_id": "target-user-uuid-999"},
 			mockSetup: func(m *mockLoanServiceClient) {
 				m.mockBanUser = func(ctx context.Context, in *pb.BanUserRequest) (*emptypb.Empty, error) {
-					return &emptypb.Empty{}, nil // میکروسرویس با موفقیت کاربر رو بن میکنه
+					return &emptypb.Empty{}, nil
 				}
 			},
 			expectedStatus: http.StatusOK,
@@ -98,16 +98,15 @@ func TestAdminsMiddleware(t *testing.T) {
 	}
 
 	// فرض میکنیم استراکت میدل‌ور هاب شما فیلد admin رو داره
-	middlewareHub := middleware.NewGatewayMiddleware(nil , nil , mockAdminConfig , nil , nil , nil , nil)
+	middlewareHub := middleware.NewGatewayMiddleware(nil, nil, mockAdminConfig, nil, nil, nil, nil)
 
-	// یک هندلر نهایی فیک که اگر کاربر ادمین بود و از میدل‌ور رد شد، وضعیت 200 بده
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
 	tests := []struct {
 		name           string
-		ctxUserID      any // آیدی که توی کانتکست تست تزریق میشه
+		ctxUserID      any
 		expectedStatus int
 	}{
 		{
@@ -133,16 +132,13 @@ func TestAdminsMiddleware(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			// تزریق یوزر آیدی به کانتکست (شبیه‌سازی میدل‌ور Auth قبلی)
 			if tt.ctxUserID != nil {
-				ctx := context.WithValue(req.Context(), userIDKey, tt.ctxUserID)
+				ctx := context.WithValue(req.Context(), middleware.UserIDKey, tt.ctxUserID)
 				req = req.WithContext(ctx)
 			}
 
 			rr := httptest.NewRecorder()
 
-			// اجرای میدل‌ور به همراه هندلر فیک بعدی
 			middlewareToTest := middlewareHub.AdminsMiddleware(nextHandler)
 			middlewareToTest.ServeHTTP(rr, req)
 
