@@ -86,7 +86,7 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.SERVICE_PATH }}
+          context: .
           file: infrastructure/deployment/loan-service.Dockerfile
           load: true
           push: false
@@ -107,7 +107,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.SERVICE_PATH }}
+          context: .
           file: infrastructure/deployment/loan-service.Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
