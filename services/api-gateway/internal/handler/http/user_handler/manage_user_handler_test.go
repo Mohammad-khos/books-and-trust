@@ -17,6 +17,9 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+type contextKey string
+const userIDKey contextKey = "userID"
+
 func TestUpdateUserHandler(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -198,7 +201,7 @@ func TestDeleteUserHandler(t *testing.T) {
 
 			req, _ := http.NewRequest(http.MethodDelete, "/api/v1/users/"+tt.userIDParam, nil)
 
-			ctx := context.WithValue(req.Context(), "user_id", tt.contextUserID)
+			ctx := context.WithValue(req.Context(),userIDKey, tt.contextUserID)
 
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("id", tt.userIDParam)

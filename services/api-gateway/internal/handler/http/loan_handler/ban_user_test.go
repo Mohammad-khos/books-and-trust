@@ -136,7 +136,7 @@ func TestAdminsMiddleware(t *testing.T) {
 
 			// تزریق یوزر آیدی به کانتکست (شبیه‌سازی میدل‌ور Auth قبلی)
 			if tt.ctxUserID != nil {
-				ctx := context.WithValue(req.Context(), "user_id", tt.ctxUserID)
+				ctx := context.WithValue(req.Context(), userIDKey, tt.ctxUserID)
 				req = req.WithContext(ctx)
 			}
 

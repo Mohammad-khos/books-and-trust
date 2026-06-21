@@ -108,7 +108,7 @@ func TestDeliveryLoanHandler(t *testing.T) {
 
 			// ۴. تزریق کانتکست یوزر آیدی (فرد آپدیت کننده)
 			if tt.ctxUserID != nil {
-				ctx := context.WithValue(req.Context(), "user_id", tt.ctxUserID)
+				ctx := context.WithValue(req.Context(), userIDKey, tt.ctxUserID)
 				req = req.WithContext(ctx)
 			}
 
