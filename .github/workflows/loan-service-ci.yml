@@ -1,0 +1,116 @@
+name: Loan Service CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/loan-service/**'
+      - '.github/workflows/loan-service-ci.yml'
+
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/loan-service/**'
+      - '.github/workflows/loan-service-ci.yml'
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+env:
+  SERVICE_PATH: services/loan-service
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/loan-service
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ${{ env.SERVICE_PATH }}/go.mod
+          cache: true
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: ${{ env.SERVICE_PATH }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ${{ env.SERVICE_PATH }}/go.mod
+          cache: true
+
+      - name: Test with coverage
+        working-directory: ${{ env.SERVICE_PATH }}
+        run: |
+          go test -coverprofile=coverage.out ./...
+          go tool cover -func=coverage.out
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      - name: Login GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.SERVICE_PATH }}
+          file: infrastructure/deployment/loan-service.Dockerfile
+          load: true
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
+      - name: Push image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.SERVICE_PATH }}
+          file: infrastructure/deployment/loan-service.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
