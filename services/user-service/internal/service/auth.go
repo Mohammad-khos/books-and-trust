@@ -87,7 +87,7 @@ func (s *UserService) LoginUser(ctx context.Context, credential string, password
 
 func (s *UserService) VerifyToken(ctx context.Context, token string) (string, error) {
 	tracer := tracing.GetTracer("user-service")
-	ctx, span := tracer.Start(ctx, "UserService.VerifyToken")
+	_, span := tracer.Start(ctx, "UserService.VerifyToken")
 	defer span.End()
 
 	userID, err := s.authenticator.VerifyToken(token)

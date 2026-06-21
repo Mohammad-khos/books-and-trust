@@ -60,7 +60,11 @@ func TestLoginUser_GRPC_Integration(t *testing.T) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	assert.NoError(t, err)
-	defer conn.Close()
+	defer func ()  {
+		if err := conn.Close(); err != nil {
+			t.Errorf("Failed to close gRPC connection %w" , err)
+		}
+	}()
 
 	client := pb.NewUserServiceClient(conn)
 

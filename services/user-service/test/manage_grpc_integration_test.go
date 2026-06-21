@@ -36,7 +36,9 @@ func TestUserManagement_GRPC_Integration(t *testing.T) {
 	defer func() {
 		sqlDB, _ := db.DB()
 		if sqlDB != nil {
-			sqlDB.Close()
+			if err := sqlDB.Close(); err != nil {
+				t.Logf("Failed to closing sql database: %v", err)
+			}
 		}
 		_ = os.Remove(testDBPath)
 	}()
@@ -71,7 +73,11 @@ func TestUserManagement_GRPC_Integration(t *testing.T) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	assert.NoError(t, err)
-	defer conn.Close()
+	defer func ()  {
+		if err := conn.Close(); err != nil {
+			t.Errorf("Failed to close gRPC connection %w" , err)
+		}
+	}()
 
 	client := pb.NewUserServiceClient(conn)
 
