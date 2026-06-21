@@ -30,7 +30,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: ${{ env.SERVICE_PATH }}/go.mod
+          go-version-file: go.mod
           cache: true
 
       - name: Lint
