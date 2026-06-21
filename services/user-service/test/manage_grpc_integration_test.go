@@ -75,7 +75,7 @@ func TestUserManagement_GRPC_Integration(t *testing.T) {
 	assert.NoError(t, err)
 	defer func ()  {
 		if err := conn.Close(); err != nil {
-			t.Errorf("Failed to close gRPC connection %w" , err)
+			t.Errorf("Failed to close gRPC connection %v" , err)
 		}
 	}()
 

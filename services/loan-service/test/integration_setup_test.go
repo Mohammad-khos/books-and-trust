@@ -68,7 +68,11 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("❌ Failed to dial bufnet: %v", err)
 	}
-	defer conn.Close()
+	defer func ()  {
+		if err := conn.Close(); err != nil {
+			log.Fatalf("Failed to close gRPC connection %v" , err)
+		}
+	}()
 
 	loanClient = pb.NewLoanServiceClient(conn)
 

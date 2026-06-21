@@ -22,7 +22,12 @@ func logAndWrite(
 		"method", r.Method,
 		"status", status,
 	)
-	WriteError(w, status, code, message, details)
+	err := WriteError(w, status, code, message, details)
+	if err != nil {
+		logger.Errorw("Failed to write error",
+			"error", err,
+		)
+	}
 
 }
 
@@ -123,11 +128,16 @@ func InternalServerErr(w http.ResponseWriter, r *http.Request, logger *zap.Sugar
 		"status", http.StatusInternalServerError,
 		"error", err,
 	)
-	WriteError(w, http.StatusInternalServerError,
+	err = WriteError(w, http.StatusInternalServerError,
 		"INTERNAL_SERVER_ERROR",
 		"An unexpected error occurred on our end. Please try again later.",
 		"",
 	)
+	if err != nil {
+		logger.Errorw("Failed to write error",
+			"error", err,
+		)
+	}
 }
 
 // ServiceUnavailableErr responds with 503 Service Unavailable.
@@ -138,9 +148,14 @@ func ServiceUnavailableErr(w http.ResponseWriter, r *http.Request, logger *zap.S
 		"method", r.Method,
 		"status", http.StatusServiceUnavailable,
 	)
-	WriteError(w, http.StatusServiceUnavailable,
+	err := WriteError(w, http.StatusServiceUnavailable,
 		"SERVICE_UNAVAILABLE",
 		"The service is temporarily unavailable. Please try again later.",
 		details,
 	)
+	if err != nil {
+		logger.Errorw("Failed to write error",
+			"error", err,
+		)
+	}
 }
