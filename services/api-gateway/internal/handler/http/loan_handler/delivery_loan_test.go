@@ -62,7 +62,7 @@ func TestDeliveryLoanHandler(t *testing.T) {
 			urlLoanID: "loan-uuid-555",
 			mockSetup: func(m *mockLoanServiceClient) {
 				m.mockDeliveryLoan = func(ctx context.Context, in *pb.DeliveryLoanRequest) (*pb.DeliveryLoanResponse, error) {
-					return nil, nil // بازگرداندن مقدار نیل برای مچ‌گیری پنیک ❌
+					return nil, nil 
 				}
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -74,7 +74,7 @@ func TestDeliveryLoanHandler(t *testing.T) {
 			mockSetup: func(m *mockLoanServiceClient) {
 				m.mockDeliveryLoan = func(ctx context.Context, in *pb.DeliveryLoanRequest) (*pb.DeliveryLoanResponse, error) {
 					return &pb.DeliveryLoanResponse{
-						DeliveryCode: "", // کد خالی فرستاده شده ❌
+						DeliveryCode: "", 
 					}, nil
 				}
 			},
@@ -84,30 +84,25 @@ func TestDeliveryLoanHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// ۱. ست‌آپ ماک کلاینت gRPC
 			mockGrpcClient := &mockLoanServiceClient{}
 			if tt.mockSetup != nil {
 				tt.mockSetup(mockGrpcClient)
 			}
 
-			// ۲. نیو کردن هندلر با کلاینت ماک
 			handler := loanHandler.NewLoanHandler(
 				zap.NewNop().Sugar(),
 				&client.LoanClient{Client: mockGrpcClient},
 			)
 
-			// ۳. ساخت ریکوئست POST
 			req, err := http.NewRequest(http.MethodPost, "/api/v1/loans/"+tt.urlLoanID+"/delivery", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			// 🚀 شبیه‌سازی پارامتر مسیر {id} برای روتر chi
 			chiCtx := chi.NewRouteContext()
 			chiCtx.URLParams.Add("id", tt.urlLoanID)
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
 
-			// ۴. تزریق کانتکست یوزر آیدی (فرد آپدیت کننده)
 			if tt.ctxUserID != nil {
 				ctx := context.WithValue(req.Context(), middleware.UserIDKey, tt.ctxUserID)
 				req = req.WithContext(ctx)
@@ -115,10 +110,8 @@ func TestDeliveryLoanHandler(t *testing.T) {
 
 			rr := httptest.NewRecorder()
 
-			// ۵. اجرای متد هندلر
 			handler.DeliveryLoanHandler(rr, req)
 
-			// ۶. تایید کد وضعیت خروجی
 			assert.Equal(t, tt.expectedStatus, rr.Code)
 		})
 	}

@@ -66,7 +66,6 @@ func TestBanUserHandler(t *testing.T) {
 				&client.LoanClient{Client: mockGrpcClient},
 			)
 
-			// تبدیل بادی به جیسون
 			var jsonBody []byte
 			if str, ok := tt.body.(string); ok {
 				jsonBody = []byte(str)
@@ -89,15 +88,13 @@ func TestBanUserHandler(t *testing.T) {
 }
 
 func TestAdminsMiddleware(t *testing.T) {
-	// ساخت یک مپ فیک از ادمین‌ها در حافظه برای تست میدل‌ور
 	mockAdminConfig := &middleware.AdminMiddleware{
 		Admins: map[string]bool{
-			"admin-uuid-111": true, // فقط این آیدی ادمین است
+			"admin-uuid-111": true,
 		},
 		Logger: zap.NewNop().Sugar(),
 	}
 
-	// فرض میکنیم استراکت میدل‌ور هاب شما فیلد admin رو داره
 	middlewareHub := middleware.NewGatewayMiddleware(nil, nil, mockAdminConfig, nil, nil, nil, nil)
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

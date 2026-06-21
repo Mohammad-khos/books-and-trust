@@ -30,7 +30,7 @@ func TestLoanFlow_Integration(t *testing.T) {
 
 		resp, err := loanClient.CreateLoan(context.Background(), req)
 
-		// راستی‌آزمایی پاسخ gRPC
+		
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 
