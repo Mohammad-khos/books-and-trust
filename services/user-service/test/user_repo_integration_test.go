@@ -16,7 +16,7 @@ func TestSQLRepository_Create_Integration(t *testing.T) {
     assert.NoError(t, err)
     defer func() { _ = container.Terminate(ctx) }()
 
-    err = db.AutoMigrate(&domain.User{})
+    _ = db.AutoMigrate(&domain.User{})
 
 	repository := repo.NewSQLRepository(db)
 

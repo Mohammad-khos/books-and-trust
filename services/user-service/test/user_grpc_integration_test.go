@@ -24,16 +24,16 @@ import (
 const bufSize = 1024 * 1024
 
 func TestRegisterUser_GRPC_Integration(t *testing.T) {
-    ctx := context.Background()
-    db, container, err := setupPostgresContainer(ctx)
-    assert.NoError(t, err)
-    defer func() { _ = container.Terminate(ctx) }()
+	ctx := context.Background()
+	db, container, err := setupPostgresContainer(ctx)
+	assert.NoError(t, err)
+	defer func() { _ = container.Terminate(ctx) }()
 
-    err = db.AutoMigrate(&domain.User{})
-    assert.NoError(t, err)
-    if err != nil {
-        return
-    }
+	err = db.AutoMigrate(&domain.User{})
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
 
 	userRepo := repo.NewSQLRepository(db)
 	bcryptHasher := crypto.NewBcryptHasher()
@@ -53,17 +53,16 @@ func TestRegisterUser_GRPC_Integration(t *testing.T) {
 	}()
 	defer baseServer.Stop()
 
-	dialCtx := context.Background()
-	conn, err := grpc.DialContext(dialCtx, "bufnet",
+	conn, err := grpc.NewClient("bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return lis.Dial()
 		}),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	assert.NoError(t, err)
-	defer func ()  {
+	defer func() {
 		if err := conn.Close(); err != nil {
-			t.Errorf("Failed to close gRPC connection %v" , err)
+			t.Errorf("Failed to close gRPC connection %v", err)
 		}
 	}()
 

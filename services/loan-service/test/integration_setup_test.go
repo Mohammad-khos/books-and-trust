@@ -58,7 +58,7 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	conn, err := grpc.DialContext(ctx, "bufnet",
+	conn, err := grpc.NewClient( "bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return lis.Dial()
 		}),
