@@ -25,13 +25,12 @@ func NewAdminMiddleware(path string, logger *zap.SugaredLogger) *AdminMiddleware
 func (m *appMiddlewareHub) AdminsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		userID, ok := r.Context().Value("user_id").(string)
+		userID, ok := r.Context().Value(UserIDKey).(string)
 		if !ok || userID == "" {
 			util.ForbiddenErr(w, r, m.admin.Logger, "unauthorized - user id missing")
 			return
 		}
-		testMode := true
-		if !testMode && !m.admin.Admins[userID] {
+		if !m.admin.Admins[userID] {
 			util.ForbiddenErr(w, r, m.admin.Logger, "forbidden - admin access required")
 			return
 		}

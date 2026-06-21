@@ -13,12 +13,11 @@ import (
 	"books-and-trust/services/loan-service/internal/service"
 	pb "books-and-trust/shared/proto/loan"
 
+	"github.com/testcontainers/testcontainers-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
-	"gorm.io/driver/sqlite" 
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 const bufSize = 1024 * 1024
@@ -27,21 +26,21 @@ var (
 	lis        *bufconn.Listener
 	testDB     *gorm.DB
 	loanClient pb.LoanServiceClient
+	container  testcontainers.Container
 )
 
 func TestMain(m *testing.M) {
+	ctx := context.Background()
 	var err error
-	
-	testDB, err = gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
+	testDB, container, err = setupPostgresContainer(ctx)
 	if err != nil {
-		log.Fatalf("❌ failed to connect to in-memory SQLite: %v", err)
+		log.Fatalf("❌ failed to start Postgres container: %v", err)
 	}
 
 	err = testDB.AutoMigrate(&domain.Loan{}, &domain.BannedUser{})
 	if err != nil {
-		log.Fatalf("❌ failed to migrate SQLite database: %v", err)
+		_ = container.Terminate(ctx)
+		log.Fatalf("❌ failed to migrate Postgres database: %v", err)
 	}
 
 	lis = bufconn.Listen(bufSize)
@@ -59,27 +58,28 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	conn, err := grpc.NewClient("bufnet", 
+	conn, err := grpc.NewClient( "passthrough:///bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return lis.Dial()
-		}), 
+		}),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
+		_ = container.Terminate(ctx)
 		log.Fatalf("❌ Failed to dial bufnet: %v", err)
 	}
-	defer conn.Close()
 
 	loanClient = pb.NewLoanServiceClient(conn)
 
 	code := m.Run()
 
 	baseServer.GracefulStop()
+	_ = conn.Close()
+	_ = container.Terminate(ctx)
 	os.Exit(code)
 }
 
 func cleanDatabase() {
 	testDB.Exec("DELETE FROM loans;")
 	testDB.Exec("DELETE FROM banned_users;")
-	testDB.Exec("DELETE FROM sqlite_sequence WHERE name IN ('loans', 'banned_users');")
 }

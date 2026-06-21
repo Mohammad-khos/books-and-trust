@@ -6,31 +6,33 @@ import (
 	"testing"
 	"time"
 
-	handler "books-and-trust/services/user-service/internal/handler/grpc" 
 	"books-and-trust/services/user-service/internal/domain"
-	"books-and-trust/services/user-service/internal/infra/jwt"   
-	"books-and-trust/services/user-service/internal/infra/crypto" 
-	"books-and-trust/services/user-service/internal/infra/repo"  
+	handler "books-and-trust/services/user-service/internal/handler/grpc"
+	"books-and-trust/services/user-service/internal/infra/crypto"
+	auth "books-and-trust/services/user-service/internal/infra/jwt"
+	"books-and-trust/services/user-service/internal/infra/repo"
 	"books-and-trust/services/user-service/internal/service"
 	pb "books-and-trust/shared/proto/user"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
-	"gorm.io/gorm"
 )
 
 func TestLoginUser_GRPC_Integration(t *testing.T) {
 	ctx := context.Background()
 
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
-	assert.NoError(t, err)
+    db, container, err := setupPostgresContainer(ctx)
+    assert.NoError(t, err)
+    defer func() { _ = container.Terminate(ctx) }()
 
-	err = db.AutoMigrate(&domain.User{})
-	assert.NoError(t, err)
+    err = db.AutoMigrate(&domain.User{})
+    assert.NoError(t, err)
+    if err != nil {
+        return
+    }
 
 	userRepo := repo.NewSQLRepository(db)
 	bcryptHasher := crypto.NewBcryptHasher() 
@@ -53,14 +55,18 @@ func TestLoginUser_GRPC_Integration(t *testing.T) {
 	}()
 	defer grpcServer.GracefulStop()
 
-	conn, err := grpc.NewClient( "passthrough:///bufnet",
+	conn, err := grpc.NewClient("passthrough:///bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return lis.Dial()
 		}),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	assert.NoError(t, err)
-	defer conn.Close()
+	defer func ()  {
+		if err := conn.Close(); err != nil {
+			t.Errorf("Failed to close gRPC connection %v" , err)
+		}
+	}()
 
 	client := pb.NewUserServiceClient(conn)
 

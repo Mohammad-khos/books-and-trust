@@ -36,9 +36,16 @@ func main() {
 	if err != nil {
 		logger.Panicw("failed to connect postgres database", "error", err)
 	}
-	//closing db connection at the end
-	sqlDB, _ := db.DB()
-	defer sqlDB.Close()
+		//closing db connection at the end
+	sqlDB, err := db.DB()
+	if err != nil {
+		logger.Fatalw("failed to get sql db", "error", err)
+	}
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			logger.Errorw("failed to close Sql database", "error", err)
+		}
+	}()
 
 	logger.Info("database successfully established")
 
@@ -51,7 +58,11 @@ func main() {
 	if err != nil {
 		logger.Errorw("error initializing tracer", "error", err)
 	}
-	defer tracer.Shutdown(traceCtx)
+	defer func() {
+		if err := tracer.Shutdown(traceCtx); err != nil {
+			logger.Errorw("error shutting down tracer", "error", err)
+		}
+	}()
 	//creating tcp connection
 	listener, err := net.Listen("tcp", cfg.App.Addr)
 	if err != nil {

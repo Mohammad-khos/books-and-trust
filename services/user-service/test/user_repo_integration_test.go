@@ -1,6 +1,5 @@
 package tests
 
-
 import (
 	"books-and-trust/services/user-service/internal/domain"
 	"books-and-trust/services/user-service/internal/infra/repo"
@@ -9,16 +8,15 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 func TestSQLRepository_Create_Integration(t *testing.T) {
-	
-	dsn := "host=user_db user=users_admin password=secretpass dbname=users port=5434 sslmode=disable"
-	
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	assert.NoError(t, err)
+    ctx := context.Background()
+    db, container, err := setupPostgresContainer(ctx)
+    assert.NoError(t, err)
+    defer func() { _ = container.Terminate(ctx) }()
+
+    _ = db.AutoMigrate(&domain.User{})
 
 	repository := repo.NewSQLRepository(db)
 

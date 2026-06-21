@@ -121,8 +121,8 @@ func NewApplication() (*Application, func()) {
 		userClient.Close()
 		loanClient.Close()
 		loggerSync()
-		cacheStore.Close()
-		tracer.Shutdown(ctx)
+		_ = cacheStore.Close()
+		_ = tracer.Shutdown(ctx)
 	}
 
 	return &Application{

@@ -78,7 +78,7 @@ func (h *gRPCHandler) VerifyToken(ctx context.Context, req *pb.VerifyTokenReques
 		case errors.Is(err, domain.ErrInvalidToken):
 			return nil, status.Error(codes.InvalidArgument, "invalid jwt token")
 		default:
-			status.Error(codes.Internal, "failed to verify jwt token")
+			return nil, status.Error(codes.Internal, "failed to verify jwt token")
 		}
 	}
 	return &pb.VerifyTokenResponse{
