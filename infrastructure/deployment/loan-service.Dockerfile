@@ -10,9 +10,7 @@ FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS deps
 
 WORKDIR /app
 
-#set mirror
-RUN go env -w GOPROXY=https://go.devneeds.ir,direct
-RUN go env -w GOSUMDB="sum.golang.org https://go-sum.devneeds.ir"
+
 
 # Copy go.mod and go.sum first to leverage Docker cache for dependencies
 COPY go.mod go.sum ./
