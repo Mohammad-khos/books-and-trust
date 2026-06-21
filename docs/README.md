@@ -1,5 +1,9 @@
 # 📚 Books and Trust
 
+![API Gateway CI](https://github.com/Mohammad-khos/books-and-trust/actions/workflows/api-gateway-ci.yml/badge.svg)
+![User Service CI](https://github.com/Mohammad-khos/books-and-trust/actions/workflows/user-service-ci.yml/badge.svg)
+![Loan Service CI](https://github.com/Mohammad-khos/books-and-trust/actions/workflows/loan-service-ci.yml/badge.svg)
+
 A production-ready **microservices** system for managing book loans between users, built in Go. The system handles user authentication, loan lifecycle management, and borrower trust/banning — all connected via gRPC, with a full observability and security stack.
 
 ---
@@ -309,6 +313,29 @@ This makes log correlation with Jaeger traces straightforward in Grafana/Loki.
 
 ---
 
+## 🔁 CI/CD
+
+Each service (`api-gateway`, `user-service`, `loan-service`) has its own **independent GitHub Actions pipeline**, triggered only when files under that service's path change — keeping CI fast and avoiding unnecessary rebuilds of unrelated services.
+
+**Pipeline stages (per service):**
+
+```
+lint  →  test (with coverage)  →  build & scan docker image  →  push to GHCR
+```
+
+1. **Lint** — static analysis with `golangci-lint`
+2. **Test** — `go test` with coverage report; gated on lint passing
+3. **Build & Scan** — multi-stage Docker image build, scanned with **Trivy** for `CRITICAL`/`HIGH` vulnerabilities (the pipeline fails the build if any are found, ignoring unfixed CVEs)
+4. **Push** — on `main` only (not on pull requests), the image is pushed to **GitHub Container Registry (GHCR)**, tagged by branch, semver, and short commit SHA
+
+This means every service ships its own versioned, vulnerability-scanned container image automatically on every merge to `main`.
+
+### Branch Protection
+
+The `main` branch is protected by a ruleset: direct pushes are disabled, and all changes must go through a pull request where the relevant service's CI pipeline (lint, test, build & scan) must pass before merging is allowed.
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -392,9 +419,3 @@ When running `docker compose up -d` for the first time, some containers may fail
 
 **3. Incomplete Test Coverage**
 Unit and integration tests exist as working examples demonstrating the testing approach and architecture, but do not provide full coverage. They are not meant to be a complete test suite.
-
----
-
-## 📄 License
-
-This project is open source. Feel free to use it as a reference or learning resource.
