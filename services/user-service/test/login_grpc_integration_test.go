@@ -55,7 +55,7 @@ func TestLoginUser_GRPC_Integration(t *testing.T) {
 	}()
 	defer grpcServer.GracefulStop()
 
-	conn, err := grpc.NewClient("bufnet",
+	conn, err := grpc.NewClient("passthrough:///bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return lis.Dial()
 		}),

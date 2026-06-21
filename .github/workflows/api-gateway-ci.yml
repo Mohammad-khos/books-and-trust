@@ -5,15 +5,15 @@ on:
     branches:
       - main
     paths:
-      - 'services/api-gateway/**'
-      - '.github/workflows/api-gateway-ci.yml'
+      - "services/api-gateway/**"
+      - ".github/workflows/api-gateway-ci.yml"
 
   pull_request:
     branches:
       - main
     paths:
-      - 'services/api-gateway/**'
-      - '.github/workflows/api-gateway-ci.yml'
+      - "services/api-gateway/**"
+      - ".github/workflows/api-gateway-ci.yml"
 
 permissions:
   contents: read
@@ -109,7 +109,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Trivy scan
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:${{ github.sha }}
           format: table
@@ -124,7 +124,6 @@ jobs:
         with:
           context: ${{ env.SERVICE_PATH }}
           file: infrastructure/deployment/api-gateway.Dockerfile
-
 
           push: true
 
